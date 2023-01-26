@@ -1,0 +1,62 @@
+# For this project, I downloaded Spotify data from Kaggle.
+# I then created a table to insert Spotify data into.
+# Finally, I performed analytics on the data using SQL. 
+
+CREATE TABLE BIT_DB.Spotifydata (
+    id               INTEGER        PRIMARY KEY,
+    artist_name      VARCHAR        NOT NULL,
+    track_name       VARCHAR        NOT NULL,
+    track_id         VARCHAR        NOT NULL,
+    popularity       INTEGER        NOT NULL,
+    danceability     DECIMAL (4, 3) NOT NULL,
+    energy           DECIMAL (4, 3) NOT NULL,
+    [key]            INTEGER        NOT NULL,
+    loudness         DECIMAL (5, 3) NOT NULL,
+    mode             INTEGER        NOT NULL,
+    speechiness      DECIMAL (5, 4) NOT NULL,
+    acousticness     DECIMAL (6, 5) NOT NULL,
+    instrumentalness TEXT           NOT NULL,
+    liveness         DECIMAL (5, 4) NOT NULL,
+    valence          DECIMAL (4, 3) NOT NULL,
+    tempo            DECIMAL (6, 3) NOT NULL,
+    duration_ms      INTEGER        NOT NULL,
+    time_signature   INTEGER        NOT NULL
+);
+
+-- First I determined the avg popularity, danceability, and energy by artist and track
+
+SELECT artist_name,
+       track_name,
+       avg(popularity),
+       avg(danceability),
+       avg(energy) 
+  FROM BIT_DB.spotifydata
+ GROUP BY artist_name,
+          track_name;
+          
+-- Then I determined who the Top 10 artists are by popularity
+
+SELECT track_name,
+       artist_name,
+       popularity
+  FROM BIT_DB.spotifydata
+ ORDER BY popularity DESC
+ LIMIT 10;
+ 
+-- Converting Miliseconds to minutes to find song duration
+
+SELECT (duration_ms / 1000) / 60,
+       track_name,
+       artist_name
+  FROM BIT_DB.spotifydata
+ ORDER BY duration_ms DESC;
+ 
+-- Checking correlation between popularity and energy or loudness
+
+SELECT popularity,
+       energy,
+       loudness,
+       track_name,
+       artist_name
+  FROM BIT_DB.Spotifydata
+ ORDER BY popularity DESC;
