@@ -1,0 +1,26 @@
+#list of all the bike lanes that have an average safety rating of 4.0 or higher. 
+#an average safety rating for each of those bike lanes, and a label that says "Safe Lane".
+
+WITH safety_average_cte AS( 
+SELECT street, 
+       AVG(safetyrating) AS 'Rating'
+FROM CityBikeLanes 
+GROUP BY street
+)
+
+SELECT street,
+       Rating,
+       'Safe Lane' AS 'label'
+FROM safety_average_cte      
+WHERE Rating >= 4.0;
+
+#list of all the bike lanes, both safety ratings for each lane given by the two technicians,
+#the average safety rating for each lane, and a label with the recommendation as "Remove", "Leave As-Is", or "Improvements Needed".
+
+SELECT street, safetyrating,
+AVG(safetyrating) OVER (PARTITION BY street) as "Average_safety_rating",
+CASE WHEN AVG(safetyrating) OVER (PARTITION BY safetyrating) >=4 THEN "Leave As-Is"
+    WHEN AVG(safetyrating) OVER (PARTITION BY safetyrating) <2.5 THEN "Remove"
+    ELSE "Improvements Needed"
+    END AS "Recommendation"
+FROM CityBikeLanes;
