@@ -1,0 +1,104 @@
+# Using SQL String Functions to Clean Data and playing with Date functions
+
+/* Overview of data set*/
+
+SELECT *
+  FROM tutorial.sf_crime_incidents_2014_01
+  
+/* Pulling out the left side of the date column */
+
+SELECT incidnt_num,
+       date,
+       LEFT(date, 10) AS cleaned_date
+  FROM tutorial.sf_crime_incidents_2014_01
+  
+/* Same thing from the right side of the date column */  
+
+SELECT incidnt_num,
+       date,
+       LEFT(date, 10) AS cleaned_date,
+       RIGHT(date, 17) AS cleaned_time
+  FROM tutorial.sf_crime_incidents_2014_01
+  
+/* Using the TRIM function to remove characters from the beginning and end of a string */  
+
+SELECT location,
+       TRIM(both '()' FROM location)
+  FROM tutorial.sf_crime_incidents_2014_01  
+
+SELECT location,
+       TRIM(leading '()' FROM location)
+  FROM tutorial.sf_crime_incidents_2014_01 
+  
+SELECT location,
+       TRIM(trailing '()' FROM location)
+  FROM tutorial.sf_crime_incidents_2014_01      
+  
+/* Returning the position of the character 'A' where it appears in the field */  
+
+SELECT incidnt_num,
+       descript,
+       POSITION('A' IN descript) AS a_position
+  FROM tutorial.sf_crime_incidents_2014_01
+  
+/* Writing a query that separates the `location` field into separate fields 
+for latitude and longitude. */  
+
+SELECT location,
+       TRIM(leading '(' FROM LEFT(location, POSITION(',' IN location) - 1)) AS lattitude,
+       TRIM(trailing ')' FROM RIGHT(location, LENGTH(location) - POSITION(',' IN location) ) ) AS longitude
+  FROM tutorial.sf_crime_incidents_2014_01
+  
+/* Combining strings from several different columns using CONCAT */
+
+SELECT incidnt_num,
+       day_of_week,
+       LEFT(date, 10) AS cleaned_date,
+       CONCAT(day_of_week, ', ', LEFT(date, 10)) AS day_and_date
+  FROM tutorial.sf_crime_incidents_2014_01
+  
+/* Writing a query that creates a date column formatted YYYY-MM-DD with pipe characters. */
+
+ SELECT incidnt_num,
+           date,
+           SUBSTR(date, 7, 4) || '-' || LEFT(date, 2) || '-' || SUBSTR(date, 4, 2) AS cleaned_date
+      FROM tutorial.sf_crime_incidents_2014_01
+      
+/* Writing a query that returns the `category` field, but with the first letter capitalized
+and the rest of the letters in lower-case. */  
+
+SELECT incidnt_num,
+       category,
+       UPPER(LEFT(category, 1)) || LOWER(RIGHT(category, LENGTH(category) - 1)) AS category_cleaned
+  FROM tutorial.sf_crime_incidents_2014_01
+  
+/* Writing a query that counts the number of incidents reported by week. Casting the week as
+a date to get rid of the hours/minutes/seconds. */  
+   
+SELECT DATE_TRUNC('week', cleaned_date)::date AS week_beginning,
+       COUNT(*) AS incidents
+  FROM tutorial.sf_crime_incidents_cleandate
+ GROUP BY 1
+ ORDER BY 1  
+ 
+ /* making a time appear in a different time zone using AT TIME ZONE */
+ 
+ SELECT CURRENT_TIME AS time,
+     CURRENT_TIME AT TIME ZONE 'PST' AS time_pst
+     
+/* Writing a query that shows exactly how long ago each indicent was reported. */
+
+SELECT incidnt_num,
+       cleaned_date,
+       NOW() AT TIME ZONE 'PST' AS now,
+       NOW() AT TIME ZONE 'PST' - cleaned_date AS time_ago 
+  FROM tutorial.sf_crime_incidents_cleandate
+  
+/* Using COALEASCE to replace null values */ 
+
+SELECT incidnt_num,
+       descript,
+       COALESCE(descript, 'No Description')
+  FROM tutorial.sf_crime_incidents_cleandate
+ORDER BY descript DESC  
+      
