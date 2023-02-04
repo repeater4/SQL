@@ -1,0 +1,37 @@
+# Using SQL DISTINCT for viewing unique values
+
+/* Overview of dataset*/
+  
+SELECT *
+  FROM tutorial.aapl_historical_stock_price
+  
+  
+  /* Writing a query that returns the unique values in the year column, 
+  in chronological order. */
+  
+  SELECT DISTINCT year 
+    FROM tutorial.aapl_historical_stock_price
+    ORDER BY year
+    
+/* taking average trade volumes by month to get a sense of when Apple stock really moves */
+
+SELECT month,
+  AVG(volume) AS avg_trade_volume
+FROM tutorial.aapl_historical_stock_price
+GROUP BY month
+ORDER BY 2 DESC
+
+/* Writing a query that counts the number of unique values in the month column for each year. */
+
+SELECT  year,
+        COUNT(DISTINCT month) AS months_count
+        FROM tutorial.aapl_historical_stock_price
+        GROUP BY year
+        ORDER BY year
+        
+/* Writing a query that separately counts the number of unique values in the month column and the
+number of unique values in the `year` column. */
+
+SELECT COUNT(DISTINCT year) AS year_count,
+       COUNT(DISTINCT month) AS month_count
+FROM tutorial.aapl_historical_stock_price
