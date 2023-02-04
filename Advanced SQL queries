@@ -1,0 +1,88 @@
+# Advanced SQL Queries
+
+/* Overview of data set */ 
+
+SELECT * 
+FROM tutorial.crunchbase_companies_clean_date
+
+/*Changing a column's data type. 
+Converting the funding_total_usd and founded_at_clean columns in the tutorial.crunchbase_companies_clean_date table
+to strings (varchar format) using a different formatting function for each one.*/
+
+SELECT CAST(funding_total_usd AS varchar) AS funding_total_usd_string,
+       founded_at_clean::varchar AS founded_at_string
+  FROM tutorial.crunchbase_companies_clean_date
+
+/* Writing a query that counts the number of companies acquired within 3 years, 5 years, 
+and 10 years of being founded (in 3 separate columns). Including a column for total companies
+acquired. Grouped by category and limit to only rows with a founding date.*/
+
+SELECT companies.category_code,
+       COUNT(CASE WHEN acquisitions.acquired_at_cleaned <= companies.founded_at_clean::timestamp + INTERVAL '3 years'
+                       THEN 1 ELSE NULL END) AS acquired_3_yrs,
+       COUNT(CASE WHEN acquisitions.acquired_at_cleaned <= companies.founded_at_clean::timestamp + INTERVAL '5 years'
+                       THEN 1 ELSE NULL END) AS acquired_5_yrs,
+       COUNT(CASE WHEN acquisitions.acquired_at_cleaned <= companies.founded_at_clean::timestamp + INTERVAL '10 years'
+                       THEN 1 ELSE NULL END) AS acquired_10_yrs,
+       COUNT(1) AS total
+  FROM tutorial.crunchbase_companies_clean_date companies
+  JOIN tutorial.crunchbase_acquisitions_clean_date acquisitions
+    ON acquisitions.company_permalink = companies.permalink
+ WHERE founded_at_clean IS NOT NULL
+ GROUP BY 1
+ ORDER BY 5 DESC
+ 
+ /* SQL date functions */
+ 
+ /*over view of data set */
+ SELECT * 
+   FROM demo.web_events
+   
+/* Isolating the month of visists with DATE_TRUNC */   
+ 
+ SELECT DATE_TRUNC('month',occurred_at) AS month,
+       channel,
+       COUNT(id) AS visits
+  FROM demo.web_events
+ WHERE occurred_at BETWEEN'2015-01-01'AND'2015-12-31 23:59:59'
+ GROUP BY 1,2
+ ORDER BY 1,2
+ 
+ /* Finding what orders were placed in the last 7 years*/
+ 
+ SELECT *
+  FROM demo.orders
+ WHERE occurred_at >= NOW() - interval '7 year'
+
+/* Finding how many orders are placed each hour of the day */
+
+SELECT EXTRACT(hour from occurred_at) AS hour,
+       COUNT(*) AS orders
+  FROM demo.orders 
+ GROUP BY 1 
+ ORDER BY 1
+ 
+ /* Finding the average weekday order volume */
+ 
+ SELECT AVG(orders) AS avg_orders_weekday
+  FROM (
+SELECT EXTRACT(dow from occurred_at) AS dow,
+       DATE_TRUNC('day',occurred_at) AS day,
+       COUNT(id) AS orders
+  FROM demo.orders
+ GROUP BY 1,2) a
+ WHERE dow NOT IN (0,6)
+ 
+ /* Finding how old a customers account is */
+ 
+ SELECT name,
+       AGE(created) AS account_age
+  FROM modeanalytics.customer_accounts
+  
+/* Finding how long it take users to complete their profile each month */
+
+SELECT DATE_TRUNC('month',started_at) AS month,
+       AGE(ended_at,started_at) time_to_complete
+  FROM modeanalytics.profile_creation_events
+  
+  
