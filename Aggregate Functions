@@ -19,7 +19,7 @@ SELECT SUM(salary)
 FROM salaries
 WHERE from_date > '1997-01-01';
 
-/* WHich is the highest & lowest salary the company offers  */
+/* Which is the highest & lowest salary the company offers  */
 
 SELECT
   MAX(salary)
@@ -43,7 +43,7 @@ SELECT
   FROM
     employees; 
     
-/* Which is the average annual salary the company's employee received?  */ 
+/* Which is the average annual salary the company's employee's received?  */ 
 
 SELECT  
   AVG(salary)
