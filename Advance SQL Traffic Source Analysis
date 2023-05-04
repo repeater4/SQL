@@ -1,0 +1,128 @@
+/* Traffic Source Analysis- Understanding where your customers are coming from 
+and which channels are driving the highest quality traffic. */ 
+
+/* Finding the website session to placed orders coversion rate */
+SELECT  
+   website_sessions.utm_content,
+   COUNT(DISTINCT website_sessions.website_session_id) AS sessions,
+   COUNT(DISTINCT orders.order_id) AS orders,
+   COUNT(DISTINCT orders.order_id) / COUNT(DISTINCT website_sessions.website_session_id) AS session_to_order_conv_rt
+FROM website_sessions
+  LEFT JOIN orders
+     ON orders.website_session_id = website_sessions.website_session_id
+WHERE website_sessions.website_session_id BETWEEN 1000 and 2000
+GROUP BY 1
+ORDER BY 2 DESC; 
+
+/* We've been live now for almost a month and are starting to generate sales. 
+Can you help me understand where the bulk of our website sessions are coming from, 
+through April 12, 2022. Id like to see a breakdown by UTM source, campaign and 
+referring domain if possible. Thanks, Cindy Sharp (CEO) 
+
+Finding the top web traffic sources */
+ 
+SELECT utm_source, 
+	    utm_campaign, 
+	   http_referer,
+       COUNT(DISTINCT website_session_id) AS sessions
+FROM website_sessions
+WHERE created_at < '2012-04-12'
+GROUP BY utm_source,
+         utm_campaign,
+         http_referer
+         ORDER BY sessions DESC;
+         
+/* Sounds like gsearch nonbrand is our major traffic source, but we need to understand
+if those sessions are driving sales. Could you please calculate the coversion rate (CVR) from 
+sessions to order? Based on what we are paying for clicks, we'll need a CVR of at least 4% to 
+make the numbers work. If we're much lower, we'll need to reduce bids. If we're higher, we can 
+increase bids to drive more volume.   Thanks, Tom (Marketing Director) 
+
+
+Calculating conversion rate(CVR) From sessions to orders  */  
+       
+SELECT 
+COUNT(Distinct website_sessions.website_session_id) AS sessions,
+COUNT(DISTINCT orders.order_id) AS orders,
+COUNT(DISTINCT orders.order_id) / COUNT(Distinct website_sessions.website_session_id) AS session_to_orders_covr_rate
+FROM  website_Sessions
+LEFT JOIN orders
+ON orders.website_session_id = website_Sessions.website_session_id
+WHERE website_sessions.created_at < '2012-04-12'
+AND utm_source = 'gsearch'
+AND utm_campaign = 'nonbrand' 
+;    
+
+/* PIVOTING DATA with COUNT and CASE  */
+SELECT
+     primary_product_id,
+     COUNT(DISTINCT CASE WHEN items_purchased = 1 THEN order_id ELSE NULL END) AS count_single_item_orders,
+     COUNT(DISTINCT CASE WHEN items_purchased = 2 THEN order_id ELSE NULL END) AS count_two_item_orders 
+FROM orders
+
+WHERE order_id BETWEEN 31000 AND 32000
+GROUP BY primary_product_id;  
+
+/* Based on your conversion rate analysis, we bid down gsearch nonbrand on 2021-04-15
+Can you pull gsearch nonbrand treanding session volume, by week, to see if the bid changes 
+have caused volume to drop at all?   Thanks again Tom (Marketing Director) 
+
+Traffic source trending */  
+
+SELECT 
+     MIN(DATE(created_at)) AS week_started_at,
+     COUNT(DISTINCT website_Session_id) AS sessions
+     
+FROM website_sessions
+WHERE created_at < '2012-05-12'
+    AND utm_source = 'gsearch'
+    AND utm_campaign = 'nonbrand'
+    GROUP BY 
+      YEAR(created_at),
+      WEEK(created_at);   /* Result shows that gsearch nonbrand is sensitive to bit changes as traffic dropped. */
+      
+/* I was trying to use our site on my moble device the other day and the expereince was not great. 
+Could you pull conversion rates from session to order, by device type? If desktop performance is better 
+then mobile we may be able to bid up for desktop specifically to get more volume. Thnaks, Tom   
+
+Traffic source bid optimization*/ 
+  
+SELECT website_sessions.device_type,
+       COUNT(DISTINCT website_sessions.website_Session_id) AS sessions,
+       COUNT(DISTINCT orders.order_id) AS orders,
+       COUNT(DISTINCT orders.order_id) / COUNT(DISTINCT website_sessions.website_session_id) AS session_to_order_conv_rate
+       FROM website_sessions
+       LEFT JOIN orders 
+	   ON orders.website_session_id = website_sessions.website_session_id
+	WHERE website_sessions.created_at < '2012-05-11'
+    AND utm_source = 'gsearch'
+    AND utm_campaign = 'nonbrand'
+    GROUP BY 1;                /*Result is Desktop performs much greater thatn mobile */ 
+    
+/* Great my theroy was correct. I'm going to increase our bids on desktop. When we bid higher in the auctions,
+we'll rank higher in them, so I think your insites here should lead to a sales boost. Well done!  Tom */ 
+
+/* Hi there, fter yor device-level analsis of conversion rates, we realized desktop was doing well, so we bid our
+gsearch nonbrand desktop campaigns up on 2012-05019. Could you pull weekly trends for both deasktop and moblie so 
+we can see the impact on vloume? You can use 2012-04-15 until the bid change as a base line. Thanks Tom */ 
+
+    
+SELECT
+   -- YEAR(created_at) AS yr,
+   -- WEEK(created_at) AS wk,
+   MIN(DATE(created_at)) AS week_start_date,
+   COUNT(DISTINCT CASE WHEN device_type = 'desktop' THEN website_session_id ELSE NULL END) AS desktop_sessions,
+   COUNT(DISTINCT CASE WHEN device_type = 'mobile' THEN website_session_id ELSE NULL END) AS mobile_sessions
+   -- COUNT(DISTINCT website_session_id) AS total_sessions
+FROM website_sessions
+WHERE website_sessions.created_at < '2012-06-09'
+   AND website_sessions.created_at > '2012-04-15'
+   AND utm_source = 'gsearch'
+   AND utm_campaign = 'nonbrand'
+GROUP BY 
+  YEAR(created_at),
+  WEEK(created_at); 
+  
+  /* Nice work digging into this! It looks like mobile has been pretty flat or a little down, but desktop
+  is looking strong thanks to the bid changes we made based on your previous conversion analysis. THings are 
+  moving in the right direction! Thanks Tom */ 
