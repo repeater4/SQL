@@ -1,0 +1,68 @@
+/* Website Content Analyzing  with Temporary Tables*/  
+  
+SELECT
+   pageview_url,
+   COUNT(DISTINCT website_pageview_id) AS pvs
+FROM website_pageviews
+WHERE website_pageview_id < 1000
+GROUP BY pageview_url
+ORDER BY pvs DESC;    
+
+SELECT * 
+FROM website_pageviews
+WHERE website_pageview_id < 1000 ;
+
+CREATE TEMPORARY TABLE first_page_view
+SELECT 
+   website_session_id,
+   MIN(website_pageview_id) AS min_pv_id
+FROM website_pageviews
+WHERE website_pageview_id < 1000
+GROUP BY website_Session_id;
+
+/* Every user is arriving at website through website HOME page */ 
+SELECT 
+	website_pageviews.pageview_url AS landing_page, 
+    COUNT(DISTINCT first_page_view.website_session_id) AS session_hitting_this_lander
+  FROM first_page_view
+    LEFT JOIN website_pageviews
+      ON first_page_view.min_pv_id = website_pageviews.website_pageview_id
+      GROUP BY 
+      website_pageviews.pageview_url
+      ;
+/*Hi there! I'm Morgan, the new Website Manager. COuld you help me get my head around the site by pulling 
+the most-viewed website pages, ranked bt session volume? Thanks, Moragn  */
+
+/* Identifying Top website pages */ 
+SELECT 
+   pageview_url,
+   COUNT(DISTINCT website_pageview_id) AS pvs
+FROM website_pageviews   
+WHERE created_at < '2012-06-09'
+GROUP BY pageview_url
+ORDER BY pvs DESC ; 
+
+/* Hi there!  Would you be able to pull a list of the top entry pages? I want to confirm where our users
+are hitting the site. If you could pull all entry pages and rank them on entry volume, that would be great. Thanks */
+
+CREATE TEMPORARY TABLE first_pv_per_session
+SELECT 
+  website_session_id,
+  MIN(website_pageview_id) AS first_pv,
+  COUNT(DISTINCT website_Session_id) AS sessions_hitting_this_landing_page
+FROM website_pageviews
+WHERE created_at < '2012-06-09'
+GROUP BY website_session_id;
+
+SELECT 
+  website_pageviews.pageview_url AS landing_page_url,
+  COUNT(DISTINCT first_pv_per_session.website_Session_id) session_hitting_page
+FROM first_pv_per_session
+LEFT JOIN website_pageviews
+  ON first_pv_per_session.first_pv = website_pageviews.website_pageview_id 
+GROUP BY 
+ website_pageviews.pageview_url;
+ 
+ /* WOW, looks like our traffic all comes through the homepage right now. Seems pretty obvious where we should focus on making
+ improvemments :) I will likely have some follow up questions to look into performance for the home page- stay tuned.
+ Thanks, Morgan. */ 
