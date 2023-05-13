@@ -1,0 +1,73 @@
+/* Analyzing Landing Page Tests  50/50 split test */ 
+
+SELECT 
+   MIN(created_at) AS first_created_at,
+   MIN(website_pageview_id) AS first_pageview_id
+FROM website_pageviews
+WHERE pageview_url = '/lander-1'
+   AND created_at IS NOT NULL ;  
+
+ -- first_created_at = '2012-06-19 00:35:54'
+ -- first_pageview_id = 23504
+ 
+ /* finding the first website_pageview_id for relevent sessions  */
+ 
+ CREATE TEMPORARY TABLE first_test_pageviews
+ SELECT
+   website_pageviews.website_session_id,
+   MIN(website_pageviews.website_pageview_id) AS min_pageview_id
+FROM website_pageviews
+   INNER JOIN website_sessions
+     ON website_sessions.website_session_id = website_pageviews.website_session_id
+     AND website_sessions.created_at < '2012-07-28' 
+     AND website_pageviews.website_pageview_id > 23504
+     AND utm_source = 'gsearch'
+     AND utm_campaign = 'nonbrand'
+GROUP BY
+  website_pageviews.website_session_id; 
+  
+  /* bringing in the landing page to each session but restricting to Home or Lander-1 */ 
+  
+  CREATE TEMPORARY TABLE nonbrand_test_sessions_w_landing_page
+  SELECT 
+     first_test_pageviews.website_session_id,
+     website_pageviews.pageview_url AS landing_page
+ FROM first_test_pageviews
+    LEFT JOIN website_pageviews
+       ON website_pageviews.website_pageview_id = first_test_pageviews.min_pageview_id
+ WHERE website_pageviews.pageview_url IN ('/home','/lander-1');   
+ 
+ -- SELECT * FROM nonbrand_test_sessions_w_landing_page;
+ 
+ /* a table to have count of pageviews per session, limit to just bounced sessions */ 
+ 
+ CREATE TEMPORARY TABLE non_brand_test_bounced_sessions
+ SELECT
+    nonbrand_test_sessions_w_landing_page.website_session_id,
+    nonbrand_test_sessions_w_landing_page.landing_page,
+    COUNT(website_pageviews.website_pageview_id) AS count_of_pages_viewed
+FROM nonbrand_test_sessions_w_landing_page     
+   LEFT JOIN website_pageviews
+     ON website_pageviews.website_session_id = nonbrand_test_sessions_w_landing_page.website_session_id
+GROUP BY 
+   nonbrand_test_sessions_w_landing_page.website_session_id,
+   nonbrand_test_sessions_w_landing_page.landing_page
+HAVING 
+  COUNT(website_pageviews.website_pageview_id) = 1;   
+  
+-- SELECT * FROM non_brand_test_bounced_sessions; 
+ 
+  /* Final output for assignement  */ 
+SELECT 
+    nonbrand_test_sessions_w_landing_page.landing_page,
+    COUNT(DISTINCT nonbrand_test_sessions_w_landing_page.website_session_id) AS sessions,
+    COUNT(DISTINCT non_brand_test_bounced_sessions.website_session_id) AS bounced_sessions,
+    COUNT(DISTINCT non_brand_test_bounced_sessions.website_session_id)/COUNT(DISTINCT nonbrand_test_sessions_w_landing_page.website_session_id) AS Bounced_rate
+FROM nonbrand_test_sessions_w_landing_page
+    LEFT JOIN non_brand_test_bounced_sessions
+     ON nonbrand_test_sessions_w_landing_page.website_session_id = non_brand_test_bounced_sessions.website_session_id
+GROUP BY  
+  nonbrand_test_sessions_w_landing_page.landing_page;  
+  
+  -- home 2261 sessions, 1319  bounced_sessions, bounce rate = 58%
+ -- lander-1 2315 sessions,  1232 bounced_sessions, bounce rate= 53%
